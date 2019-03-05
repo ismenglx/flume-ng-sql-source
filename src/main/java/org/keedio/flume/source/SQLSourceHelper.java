@@ -6,7 +6,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.nio.charset.Charset;
+import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.google.common.base.Charsets;
 import org.hibernate.cfg.Configuration;
@@ -86,7 +89,7 @@ public class SQLSourceHelper {
 
     statusFilePath = context.getString("status.file.path", DEFAULT_STATUS_DIRECTORY);
     statusFileName = context.getString("status.file.name");
-    table = context.getString("table");
+    table = getTableByRegex(context.getString("table"));
     columnsToSelect = context.getString("columns.to.select", "*");
     runQueryDelay = context.getInteger("run.query.delay", DEFAULT_QUERY_DELAY);
     directory = new File(statusFilePath);
@@ -121,6 +124,20 @@ public class SQLSourceHelper {
     }
 
     query = buildQuery();
+  }
+
+  private static String getTableByRegex(String table){
+    Pattern p = Pattern.compile("([^%]*)(%.*)");
+    Matcher matcher = p.matcher(table);
+
+    while(matcher.find()){
+      String name = matcher.group(1);
+      String group = matcher.group(2);
+
+      SimpleDateFormat format = new SimpleDateFormat(group.replaceAll("%",""));
+      table = name + format.format(System.currentTimeMillis());
+    }
+    return table;
   }
 
   public String buildQuery() {
